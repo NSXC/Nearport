@@ -21,11 +21,13 @@ namespace ClosestAirport
         {
             var watcher = new GeoCoordinateWatcher(GeoPositionAccuracy.Default);
             watcher.Start();
-
+            var table = new Table();
+            table.AddColumn("Property");
+            table.AddColumn("Value");
+            table.Border(TableBorder.Rounded);
             int tryCount = 0;
             while (watcher.Status != GeoPositionStatus.Ready && tryCount < 10)
             {
-                Console.WriteLine("Waiting for location...");
                 await Task.Delay(1000);
                 tryCount++;
             }
@@ -34,7 +36,6 @@ namespace ClosestAirport
             if (watcher.Status == GeoPositionStatus.Ready)
             {
                 userLocation = watcher.Position.Location;
-                Console.WriteLine($"Your location: {userLocation.Latitude}, {userLocation.Longitude}");
             }
             else
             {
@@ -49,12 +50,8 @@ namespace ClosestAirport
             var airports = await LoadAirportsAsync();
 
             var closestAirport = airports.OrderBy(a => a.Location.GetDistanceTo(userLocation)).FirstOrDefault();
-
-            Console.WriteLine($"Closest airport: {closestAirport.Name}");
-            Console.WriteLine($"City: {closestAirport.City}");
-            Console.WriteLine($"Country: {closestAirport.Country}");
             string url = $"https://opensky-network.org/api/states/all?lamin={userLocation.Latitude - 1}&lomin={userLocation.Longitude - 1}&lamax={userLocation.Latitude + 1}&lomax={userLocation.Longitude + 1}";
-            Console.WriteLine(url);
+
             using (var client = new HttpClient())
             {
                 client.DefaultRequestHeaders.Accept.Clear();
@@ -82,14 +79,18 @@ namespace ClosestAirport
                             closestFlight = flight;
                         }
                     }
+                    string closestFlightInfo;
                     if (closestFlight != null)
                     {
-                        Console.WriteLine($"The closest flight is {closestFlight[1]} at a distance of {closestDistance} km");
+                        closestFlightInfo = $"Flight: {closestFlight[1]}[[-]]  {closestDistance} km";
+                        table.AddRow("Closest Flight", closestFlightInfo);
                     }
                     else
                     {
-                        Console.WriteLine("No flights found in the area");
+                        closestFlightInfo = "No flights found in the area";
+                        table.AddRow("Closest Flight", closestFlightInfo);
                     }
+
                 }
                 else
                 {
@@ -109,10 +110,16 @@ namespace ClosestAirport
                 using (var process = Process.Start(processInfo))
                 {
                     process.WaitForExit();
-                }
+                };
                 var image = new CanvasImage("airport.png");
                 image.MaxWidth(18);
                 AnsiConsole.Write(image);
+                table.AddRow("Your Location", $"{userLocation.Latitude}, {userLocation.Longitude}");
+                table.AddRow("Closest Airport", closestAirport.Name);
+                table.AddRow("City", closestAirport.City);
+                table.AddRow("Country", closestAirport.Country);
+                AnsiConsole.Render(table);
+
 
             }//THE CORE
 
