@@ -8,4 +8,4 @@ Get info about the closest airport to you!
 
 Near port is just a part of a tool used by real companies in today but in a much larger scale and with a clean front end GUI
 
-NearPort is used in the backend and powers 2 live production softwares today 
+NearPort is used in the backend and powers 2 live production softwares today for real world companies in NYC and LA. 
